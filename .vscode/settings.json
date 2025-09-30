@@ -1,0 +1,42 @@
+{
+    "saveAndRunExt": {
+        "commands": [
+            {
+                "match": "(.*\\.c|.*\\.h|.*\\.cpp)",
+                "isAsync": true,
+                "isShellCommand": false,
+                "cmd": "workbench.action.tasks.test"
+            },
+        ],
+    },
+    "lldb.displayFormat": "hex",
+    "lldb.showDisassembly": "auto",
+    "lldb.dereferencePointers": true,
+    "lldb.consoleMode": "commands",
+    "files.associations": {
+        "mini-gmp-rand.h": "c",
+        "inttypes.h": "c",
+        "rsa.h": "c",
+        "math.h": "c",
+        "time.h": "c",
+        "cmath": "c",
+        "*.tcc": "c",
+        "optional": "c",
+        "ratio": "c",
+        "system_error": "c",
+        "array": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "variant": "c",
+        "stddef.h": "c",
+        "stdio.h": "c",
+        "aes.h": "c",
+        "stdint.h": "c",
+        "string.h": "c",
+        "stdlib.h": "c",
+        "convert.h": "c",
+        "cstddef": "c"
+    },
+}

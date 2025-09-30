@@ -1,0 +1,52 @@
+BasedOnStyle: Google
+IndentWidth: 4
+AllowShortFunctionsOnASingleLine: None
+BreakBeforeBraces: Custom
+BraceWrapping:
+    BeforeElse: true
+    BeforeWhile: true
+ColumnLimit: 120
+DerivePointerAlignment: false
+PointerAlignment: Right
+
+# =============================================================================
+# Configuração do clang-format para este projeto
+#
+# Explicação das opções:
+#
+# BasedOnStyle: Google
+#   - Começa a formatação a partir do estilo Google C++ padrão.
+#
+# IndentWidth: 4
+#   - Cada nível de indentação terá 4 espaços (sobrescreve o padrão do Google, que é 2).
+#
+# AllowShortFunctionsOnASingleLine: None
+#   - Funções curtas NÃO podem ficar em uma linha só.
+#     Exemplo proibido: int sum(int a,int b){return a+b;}
+#     Exemplo formatado:
+#       int sum(int a,int b)
+#       {
+#           return a + b;
+#       }
+#
+# BreakBeforeBraces: Custom
+#   - Permite definir regras personalizadas de quebra de linha antes das chaves.
+#
+# BraceWrapping:
+#   BeforeElse: true
+#       - Coloca o 'else' em uma nova linha antes da chave.
+#   BeforeWhile: true
+#       - Coloca o 'while' de um do-while em uma nova linha antes da chave.
+#
+# ColumnLimit: 120
+#   - Limite máximo de caracteres por linha. Linhas mais longas serão quebradas.
+#
+# DerivePointerAlignment: false
+#   - Não herda alinhamento de ponteiros de outro estilo.
+#
+# PointerAlignment: Right
+#   - Ponteiros ficam junto da variável, não do tipo:
+#       int* ptr;   <- correto
+#       int *ptr;   <- não será usado
+#
+# =============================================================================
