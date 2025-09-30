@@ -1,6 +1,7 @@
 #ifndef TEST_H
 #define TEST_H
 
+#include <iomanip>      // <<<< adicionado
 #include "gtest/gtest.h"
 
 typedef enum { OUTPUT_FORMAT_DEC, OUTPUT_FORMAT_HEX } output_format_t;

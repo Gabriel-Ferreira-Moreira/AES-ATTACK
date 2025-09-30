@@ -1,6 +1,10 @@
 #ifndef AES_H_
 #define AES_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -14,16 +18,17 @@
 #define AES_KEYLEN 16   // chave de 128 bits (16 bytes)
 #define AES_keyExpSize 176 // tamanho da chave expandida
 
-
 struct AES_ctx
 {
   uint8_t RoundKey[AES_keyExpSize]; // Guarda o conjunto de chaves expandidas (round keys)
 };
 
-// AES em C
 void AES_init_ctx(struct AES_ctx* ctx, const uint8_t* key);
 void AES_ECB_encrypt(const struct AES_ctx* ctx, uint8_t* buf, int *count);
-//void AES_ECB_decrypt(const struct AES_ctx* ctx, uint8_t* buf);
+void AES_ECB_decrypt(const struct AES_ctx* ctx, uint8_t* buf);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif // AES_H_
