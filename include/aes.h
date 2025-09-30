@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define RDN 0 // 0 para analisar 1 round/1 para analisar todos os rounds
+#define RDN 1 // 0 para analisar 1 round/1 para analisar todos os rounds
 #define ECB 1
 #define AES128 1
 
@@ -21,14 +21,9 @@ struct AES_ctx
 };
 
 // AES em C
-#if RDN
-void AES_init_ctx(struct AES_ctx* ctx, const uint8_t* key);
-void AES_ECB_encrypt(const struct AES_ctx* ctx, uint8_t* buf, uint8_t MSB[16][10]);
-#else
-
 void AES_init_ctx(struct AES_ctx* ctx, const uint8_t* key);
 void AES_ECB_encrypt(const struct AES_ctx* ctx, uint8_t* buf, int *count);
 //void AES_ECB_decrypt(const struct AES_ctx* ctx, uint8_t* buf);
-#endif
+
 
 #endif // AES_H_

@@ -5,22 +5,14 @@
 #include "convert.h"
 #include <string.h>
 
-void gerar_inputs(uint8_t inputs[16][16]) {
-    for (int i = 0; i < 16; i++) {
-        memset(inputs[i], 0, 16); // zera tudo
-        inputs[i][i] = 0x80;      // coloca MSB = 1 no byte i
-    }
-}
-
+#define ITERS 10000
 int main(void) 
 { 
-    for (int rodada = 1; rodada <= 3; rodada++) {
-        printf("\n===== Rodada %d =====\n\n", rodada);
 
         #ifdef _WIN32
             system("cls");
         #else
-            //system("clear");
+            system("clear");
         #endif
 
         struct AES_ctx ctx;
@@ -33,21 +25,35 @@ int main(void)
 
         AES_init_ctx(&ctx, key);
 
-        uint8_t input[16] = {0}, posicao[16] = {0};
-        int conts = 0, contador = 0;
-        AES_ECB_encrypt(&ctx, input, &conts);
-        printf("Acessos na memória lenta (chave inicial): %d\n\n", conts);
+        uint8_t input[16];
+        int conts;
 
-        uint8_t inputs[16][16];
-        gerar_inputs(inputs);
+        long long sum_zero = 0;
+        long long sum_msb  = 0;
 
-        for (int i = 0; i < 16; i++) {
-            contador = 0;  // zera a cada chamada
-            AES_ECB_encrypt(&ctx, inputs[i], &contador);
-
-            printf("Input %d -> Acessos na memória lenta: %d\n", i, contador - 74);
+        // 1) ITERS vezes com input todo zero
+        for (int it = 0; it < ITERS; it++) {
+            conts = 0;
+            memset(input, 0, 16); // zera tudo
+            AES_ECB_encrypt(&ctx, input, &conts);
+            sum_zero += conts;
         }
-    }
+
+        // 2) ITERS vezes com input[0] = 0x80 e resto zero
+        for (int it = 0; it < ITERS; it++) {
+            conts = 0;
+            memset(input, 0, 16); // zera tudo
+            input[0] = 0x80;
+            AES_ECB_encrypt(&ctx, input, &conts);
+            sum_msb += conts;
+        }
+
+        // 3) Printar as médias
+        double avg_zero = (double)sum_zero / (double)ITERS;
+        double avg_msb  = (double)sum_msb  / (double)ITERS;
+
+        printf("Média (input todo zero) : %.2f\n", avg_zero);
+        printf("Média (input[0]=0x80)   : %.2f\n", avg_msb);
 
     return 0;
 }

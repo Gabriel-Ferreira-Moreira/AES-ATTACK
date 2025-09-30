@@ -11,15 +11,6 @@
 
 typedef uint8_t state_t[4][4];
 
-#if defined(_WIN32) || defined(_WIN64)
-
-  #include <windows.h>  // Para Sleep no Windows
-  #define DELAY(ms) Sleep(ms)
-#else
-  #include <unistd.h>   // Para sleep no Linux
-  #define DELAY(ms) usleep((ms) * 1000)  
-#endif
-
 uint8_t sbox[256] = {
 
   //0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
@@ -118,51 +109,6 @@ static void AddRoundKey(uint8_t round, state_t* state, const uint8_t* RoundKey)
   }
 }
 
-// Funçao para conferir resposta
-static void FirstBit(state_t* state) {
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            uint8_t byte = (*state)[i][j];
-            // Pega o primeiro bit (MSB = bit 7)
-            uint8_t msb = (byte & 0x80) >> 7;
-
-            // Imprime no formato "1xxx-xxxx" ou "0xxx-xxxx"
-            printf("%dxxx-xxxx  ", msb);
-        }
-        printf("\n"); // quebra de linha a cada linha do state
-    }
-}
-
-// Função: analisa os 16 bytes e retorna os MSBs em um vetor de 16 posições
-void ExtractMSB(state_t* state, uint8_t output[16]) {
-    int k = 0;
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            uint8_t byte = (*state)[i][j];
-            output[k++] = (byte & 0x80) ? 1 : 0; // MSB -> 1 ou 0
-        }
-    }
-}
-
-#if RDN
-static void SubBytes(state_t* state, uint8_t output[16][10], uint8_t round) { 
-    uint8_t i, j;
-    int k = 0;  // índice do byte dentro do state (0 a 15)
-
-    for (i = 0; i < 4; ++i) {
-        for (j = 0; j < 4; ++j) {
-            uint8_t byte = (*state)[j][i]; 
-
-            // Armazena MSB na posição correta: linha = byte, coluna = round
-            output[k][round] = (byte & 0x80) ? 1 : 0;
-            k++;
-            
-            // Substituição na S-box
-            (*state)[j][i] = getSBoxValue(byte);
-        }
-    }
-}
-#else
 
 static void SubBytes(state_t* state, int *count) {
     uint8_t i, j;
@@ -182,7 +128,6 @@ static void SubBytes(state_t* state, int *count) {
 }
 
 
-#endif
 static void ShiftRows(state_t* state)
 {
   uint8_t temp;
@@ -228,42 +173,6 @@ static void MixColumns(state_t* state)
   }
 }
 
-# if RDN
-static void Cipher(state_t* state, const uint8_t* RoundKey, uint8_t MSB[16][10])
-{
-    uint8_t round = 0;
-
-    // Primeiro AddRoundKey (round 0)
-    AddRoundKey(0, state, RoundKey);
-
-    // Laço de rounds
-    for (round = 1; round <= Nr; ++round)
-    {
-        // Salva MSBs do SubBytes neste round
-        SubBytes(state, MSB, round - 1); // round-1 pois vamos preencher colunas 0..9
-
-        // ShiftRows
-        ShiftRows(state);
-
-        // Se não for o último round, aplica MixColumns + AddRoundKey
-        if (round != Nr)
-        {
-            MixColumns(state);
-            AddRoundKey(round, state, RoundKey);
-        }
-    }
-
-    // Último AddRoundKey do round final
-    AddRoundKey(Nr, state, RoundKey);
-}
-
-// Função de criptografia AES-ECB
-void AES_ECB_encrypt(const struct AES_ctx* ctx, uint8_t* buf, uint8_t MSB[16][10])
-{
-    Cipher((state_t*)buf, ctx->RoundKey, MSB);
-}
-
-#else
 static void Cipher(state_t* state, const uint8_t* RoundKey, int *count)
 {
     uint8_t round = 0;
@@ -274,10 +183,13 @@ static void Cipher(state_t* state, const uint8_t* RoundKey, int *count)
     {
         SubBytes(state, count);   // agora incrementa o contador
         ShiftRows(state);
-        if (round == Nr) 
-        {
-            break;
-        }
+
+        # if RDN
+        if (round == Nr) break;
+        #else
+        if (round == 1) break;      
+        #endif
+        
         MixColumns(state);
         AddRoundKey(round, state, RoundKey);
     }
@@ -290,5 +202,5 @@ void AES_ECB_encrypt(const struct AES_ctx* ctx, uint8_t* buf, int *count)
 {
     Cipher((state_t*)buf, ctx->RoundKey, count);
 }
-#endif
+
 
