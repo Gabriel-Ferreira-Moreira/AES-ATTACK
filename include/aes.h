@@ -11,6 +11,7 @@ extern "C" {
 #include <stdlib.h>
 
 #define RDN 1 // 0 para analisar 1 round/1 para analisar todos os rounds
+#define BR 0  // 0 para oráculo 2 e 1 para oráculo 1  
 #define ECB 1
 #define AES128 1
 
@@ -24,7 +25,7 @@ struct AES_ctx
 };
 
 void AES_init_ctx(struct AES_ctx* ctx, const uint8_t* key);
-void AES_ECB_encrypt(const struct AES_ctx* ctx, uint8_t* buf, int *count);
+void AES_ECB_encrypt(const struct AES_ctx* ctx, uint8_t* buf, int *O);
 void AES_ECB_decrypt(const struct AES_ctx* ctx, uint8_t* buf);
 
 #ifdef __cplusplus

@@ -37,6 +37,7 @@
         "string.h": "c",
         "stdlib.h": "c",
         "convert.h": "c",
-        "cstddef": "c"
+        "cstddef": "c",
+        "typeinfo": "c"
     },
 }

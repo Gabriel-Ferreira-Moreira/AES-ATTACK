@@ -109,22 +109,40 @@ static void AddRoundKey(uint8_t round, state_t* state, const uint8_t* RoundKey)
   }
 }
 
-
-static void SubBytes(state_t* state, int *count) {
+static void SubBytes(state_t* state, int *O) {
     uint8_t i, j;
+    int first = 1; // sinaliza se é o primeiro incremento
 
     for (i = 0; i < 4; ++i) {
-        for (j = 0; j < 4; ++j) {
-            uint8_t byte = (*state)[j][i];
+        for (j = 0; j < 4; ++j) 
+        {
+            uint8_t before = (*state)[j][i];
 
-            if (byte >= 0x80) {
-                (*count)++;   // incrementa o contador externo
-            }
+            // Aplica a S-Box
+            uint8_t after = getSBoxValue(before);
+            (*state)[j][i] = after;
 
-            // aplica a S-Box
-            (*state)[j][i] = getSBoxValue(byte);
-        }
+#if BR
+      // Oráculo 1: conta sempre que o valor antes for >= 0x80
+      if (before >= 0x80) (*O)++;
+
+#else // Oráculo 2: conta sempre que o valor cruzar a barreira 0x80
+      if (first) {
+          // Inicia na memória rápida
+          if (before >= 0x80) {
+              (*O)++;
+              first = 0;
+          }
+      } else {
+          // Segue a regra da barreira “cruzar 0x80”
+          if ((before < 0x80 && after >= 0x80) ||
+              (before >= 0x80 && after < 0x80)) {
+              (*O)++;
+          }
+      }
+#endif
     }
+}
 }
 
 
@@ -174,7 +192,7 @@ static void MixColumns(state_t* state)
 }
 
 
-static void Cipher(state_t* state, const uint8_t* RoundKey, int *count)
+static void Cipher(state_t* state, const uint8_t* RoundKey, int *O)
 {
     uint8_t round = 0;
 
@@ -182,7 +200,7 @@ static void Cipher(state_t* state, const uint8_t* RoundKey, int *count)
 
     for (round = 1; ; ++round)
     {
-        SubBytes(state, count);   // agora incrementa o contador
+        SubBytes(state, O);   // agora incrementa o contador
         ShiftRows(state);
 
         # if RDN
@@ -199,9 +217,9 @@ static void Cipher(state_t* state, const uint8_t* RoundKey, int *count)
     AddRoundKey(Nr, state, RoundKey);
 }
 
-void AES_ECB_encrypt(const struct AES_ctx* ctx, uint8_t* buf, int *count)
+void AES_ECB_encrypt(const struct AES_ctx* ctx, uint8_t* buf, int *O)
 {
-    Cipher((state_t*)buf, ctx->RoundKey, count);
+    Cipher((state_t*)buf, ctx->RoundKey, O);
 }
 
 ///////////////////////////////////////////////////// Decrypt function///////////////////////////////////////////////////////////
