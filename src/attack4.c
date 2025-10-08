@@ -1,3 +1,6 @@
+// Ataca todos os rounds com o Oráculo 2 informando apenas a quantidade de vezes em que a barreira de memória foi ultrapassada
+// Defina o RDN e o BR em include/aes.h 
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +33,7 @@ int main(void) {
     int bits_encontrados[16] = {0};
     uint8_t MSB[16];
 
-    extrair_MSB(key, MSB);
+    extrair_MSB(key, MSB); // Extrai os MSBs da chave
 
     srand(time(NULL));
 // Loop para descobrir 1 bit por byte
@@ -59,7 +62,6 @@ for (int pos = 0; pos < 16; pos++) {
         for (int j = 0; j < 16; j++)
             input[j] = rand() & 0xFF; // todos aleatórios
 
-        // aplica bits já descobertos nas posições anteriores 0..pos-1
         for (int b = 0; b < pos; b++) {
         input[b] &= 0x7F; // 1000 0000
         }

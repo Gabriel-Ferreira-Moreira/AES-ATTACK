@@ -10,7 +10,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
-#define RDN 1 // 0 para analisar 1 round/1 para analisar todos os rounds
+#define RDN 0 // 0 para analisar 1 round/1 para analisar todos os rounds
 #define BR 0  // 0 para oráculo 2 e 1 para oráculo 1  
 #define ECB 1
 #define AES128 1
