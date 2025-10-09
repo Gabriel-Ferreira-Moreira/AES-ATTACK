@@ -11,7 +11,7 @@
 #include "aes.h"
 #include "convert.h"
 
-#define ITERS 1000
+#define ITERS 10000
 
 // Pega o bit mais significativo de cada byte e armazena em MSB (esquerda -> direita)
 void extrair_MSB(const uint8_t key[16], uint8_t MSB[16]) {
@@ -20,7 +20,7 @@ void extrair_MSB(const uint8_t key[16], uint8_t MSB[16]) {
     }
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
     struct AES_ctx ctx;
     uint8_t key[16] = {0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe, 0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81};
 
@@ -36,6 +36,8 @@ int main(void) {
     extrair_MSB(key, MSB); // Extrai os MSBs da chave
 
     srand(time(NULL)); // Semente
+    // int seed = atoi(argv[1]);
+    // srand(seed);
 
 // Loop para descobrir 1 bit por byte
 for (int pos = 0; pos < 16; pos++) {
@@ -49,9 +51,14 @@ for (int pos = 0; pos < 16; pos++) {
             input[j] = rand() & 0xFF; // todos aleatórios
 
         // força MSB = 0 para todos os bytes de 0 até pos 
-        for (int b = 0; b <=pos; b++) {
+        for (int b = 0; b < pos; b++) {
             input[b] &= 0x7F; // 0111 1111
+            if (MSB[b] == 1) {
+                input[b] |= 0x80; // 1000 0000
+            }
         }
+
+        input[pos] &= 0x7F; // força MSB atual (pos) = 0
 
         AES_ECB_encrypt(&ctx, input, &conts);
         sum_zero += conts;
@@ -63,9 +70,15 @@ for (int pos = 0; pos < 16; pos++) {
         for (int j = 0; j < 16; j++)
             input[j] = rand() & 0xFF; // todos aleatórios
         
-        #if 0 // Substitue os bits anteriores (0..pos) por 1
-        for (int b = 0; b < pos; b++) 
-            input[pos] |= 0x80;
+        #if 1
+        // Substitue os bits anteriores (0..pos) por 1
+        for (int b = 0; b < pos; b++) {
+            input[b] &= 0x7F; // 0111 1111
+            if (MSB[b] == 1) {
+                input[b] |= 0x80; // 1000 0000
+            }
+
+        }
 
         #else // Substitue os bits anteriores (0..pos-1) conforme o valor encontrado
         if (Bit[pos] == 0) {
@@ -94,11 +107,15 @@ for (int pos = 0; pos < 16; pos++) {
 
     if ((avg_msb[pos] - avg_zero) > 0) {
         Bit[pos] = 0;
-        //printf("Bit[%d] = 0 (avg_msb > avg_zero)\n", pos);
+        printf("Bit[%d] = 0 (avg_msb > avg_zero)\n", pos);
     } else {
         Bit[pos] = 1;
-        //printf("Bit[%d] = 1 (avg_msb <= avg_zero)\n", pos);
+        printf("Bit[%d] = 1 (avg_msb <= avg_zero)\n", pos);
     }
+
+    printf("Pos = %d - %s\n", pos, (Bit[pos] == MSB[pos]) ? "OK" : "ERRO");
+    printf("sum_msb  = %d\n", (int)sum_msb[pos]);
+    printf("sum_zero = %d\n\n", (int)sum_zero);
 }
     int correct = 0;
     /* Compara bits_encontrados e MSB extraído */
