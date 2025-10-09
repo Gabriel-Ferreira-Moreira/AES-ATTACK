@@ -1,5 +1,6 @@
 // Ataca o 1 round com o Oráculo X informando a ordem q em foi acessada a memória lenta
 // Defina o RDN em include/aes.h 
+// INCOMPLETO
 
 #include <stdio.h>
 #include <stdint.h>

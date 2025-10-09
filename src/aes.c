@@ -123,24 +123,24 @@ static void SubBytes(state_t* state, int *O) {
             uint8_t after = getSBoxValue(before);
             (*state)[j][i] = after;
 
-#if BR
-      // Oráculo 1: conta sempre que o valor antes for >= 0x80
-      if (before >= 0x80) (*O)++;
-
-#else // Oráculo 2: conta sempre que o valor cruzar a barreira 0x80
+#if BR // Oráculo 2: conta sempre que o Byte cruzar a barreira 0x80
+    
       if (first) {
-          // Inicia na memória rápida
+          // Inicia na memória rápida MR -> ML
           if (before >= 0x80) {
               (*O)++;
               first = 0;
           }
       } else {
           // Segue a regra da barreira “cruzar 0x80”
-          if ((before < 0x80 && after >= 0x80) ||
-              (before >= 0x80 && after < 0x80)) {
+          if ((before < 0x80 && after >= 0x80) || // MR -> ML
+              (before >= 0x80 && after < 0x80)) { // ML -> MR
               (*O)++;
           }
       }
+#else // Oráculo 1: conta sempre que o valor antes for >= 0x80
+      
+      if (before >= 0x80) (*O)++;
 #endif
     }
 }

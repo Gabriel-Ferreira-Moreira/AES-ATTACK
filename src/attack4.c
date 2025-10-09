@@ -1,5 +1,6 @@
 // Ataca todos os rounds com o Oráculo 2 informando apenas a quantidade de vezes em que a barreira de memória foi ultrapassada
 // Defina o RDN e o BR em include/aes.h 
+// INCOMPLETO
 
 #include <stdint.h>
 #include <stdio.h>
@@ -11,11 +12,10 @@
 #include "convert.h"
 
 #define ITERS 1000
-#define BLOCK_SIZE 16
 
+// Pega o bit mais significativo de cada byte e armazena em MSB (esquerda -> direita)
 void extrair_MSB(const uint8_t key[16], uint8_t MSB[16]) {
     for (int i = 0; i < 16; i++) {
-        // Pega o bit mais significativo e normaliza para 0 ou 1
         MSB[i] = (key[i] & 0x80) >> 7;
     }
 }
@@ -29,13 +29,14 @@ int main(void) {
     uint8_t input[16] = {0};
     int conts;
     double sum_zero, sum_msb[16], avg_msb[16];
-    double avg_zero;
-    int bits_encontrados[16] = {0};
-    uint8_t MSB[16];
+    double avg_zero; 
+    int Bit[16] = {0}; // Armazena os bits encontrados da chave
+    uint8_t MSB[16]; // Armazena os bits mais significativos da chave 
 
     extrair_MSB(key, MSB); // Extrai os MSBs da chave
 
-    srand(time(NULL));
+    srand(time(NULL)); // Semente
+
 // Loop para descobrir 1 bit por byte
 for (int pos = 0; pos < 16; pos++) {
     sum_zero = 0;               // soma para o caso com MSB[0..pos] = 0
@@ -47,8 +48,8 @@ for (int pos = 0; pos < 16; pos++) {
         for (int j = 0; j < 16; j++)
             input[j] = rand() & 0xFF; // todos aleatórios
 
-        // força MSB = 0 para todos os bytes de 0 até pos (inclusive)
-        for (int b = 0; b < pos; b++) {
+        // força MSB = 0 para todos os bytes de 0 até pos 
+        for (int b = 0; b <=pos; b++) {
             input[b] &= 0x7F; // 0111 1111
         }
 
@@ -61,10 +62,21 @@ for (int pos = 0; pos < 16; pos++) {
         conts = 0;
         for (int j = 0; j < 16; j++)
             input[j] = rand() & 0xFF; // todos aleatórios
+        
+        #if 0 // Substitue os bits anteriores (0..pos) por 1
+        for (int b = 0; b < pos; b++) 
+            input[pos] |= 0x80;
 
-        for (int b = 0; b < pos; b++) {
-        input[b] &= 0x7F; // 1000 0000
-        }
+        #else // Substitue os bits anteriores (0..pos-1) conforme o valor encontrado
+        if (Bit[pos] == 0) {
+            for (int b = 0; b < pos; b++) 
+                input[b] &= 0x7F; // 0111 1111
+
+        } else { // Bit[pos] == 1
+            for (int b = 0; b < pos; b++) 
+                input[b] |= 0x80; // 1000 0000
+            }
+        #endif
 
         // força MSB atual (pos) = 1
         input[pos] |= 0x80;
@@ -81,21 +93,24 @@ for (int pos = 0; pos < 16; pos++) {
     //printf("avg_msb[%d] = %.6f | avg_zero = %.6f\n", pos, avg_msb[pos], avg_zero);
 
     if ((avg_msb[pos] - avg_zero) > 0) {
-        bits_encontrados[pos] = 0;
+        Bit[pos] = 0;
         //printf("Bit[%d] = 0 (avg_msb > avg_zero)\n", pos);
     } else {
-        bits_encontrados[pos] = 1;
+        Bit[pos] = 1;
         //printf("Bit[%d] = 1 (avg_msb <= avg_zero)\n", pos);
     }
 }
-
+    int correct = 0;
     /* Compara bits_encontrados e MSB extraído */
     for (int pos = 0; pos < 16; pos++) {
-        if (bits_encontrados[pos] == MSB[pos])
-            printf("pos %2d: recovered == MSB (both %u) -> OK\n", pos, bits_encontrados[pos]);
+        if (Bit[pos] == MSB[pos]){
+            printf("pos %2d: Bit: %u -> OK\n", pos, Bit[pos]);
+            correct++;
+        }
         else
-            printf("pos %2d: recovered=%u != MSB=%u -> ERROR\n", pos, bits_encontrados[pos], MSB[pos]);
+            printf("pos %2d: Bit: %u -> ERROR\n", pos, Bit[pos]);
     }
+    printf("\nTotal de bits corretos: %d/16\n", correct);
 
 
     return 0;
