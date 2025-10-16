@@ -26,6 +26,11 @@ add_executable(test
     src/test.cpp src/aes.c)
 target_include_directories(test PRIVATE include)
 
-# Linka com GoogleTest 
-find_package(GTest REQUIRED)
-target_link_libraries(test PRIVATE GTest::GTest GTest::Main pthread)
+# Linka com GoogleTest
+# if (NOT APPLE)
+#     find_package(GTest REQUIRED)
+#     target_link_libraries(test PRIVATE GTest::GTest GTest::Main pthread)
+# else()
+add_subdirectory(googletest)
+target_link_libraries(test PRIVATE GTest::gtest GTest::gtest_main pthread)
+# endif()

@@ -11,7 +11,7 @@
 #include "aes.h"
 #include "convert.h"
 
-#define ITERS 10000
+#define ITERS 1000
 
 // Pega o bit mais significativo de cada byte e armazena em MSB (esquerda -> direita)
 void extrair_MSB(const uint8_t key[16], uint8_t MSB[16]) {
@@ -39,10 +39,20 @@ int main(int argc, char *argv[]) {
     // int seed = atoi(argv[1]);
     // srand(seed);
 
+    // Ordem em que as S-boxes são acessados pela implementação. O ataque abaixo é montado descobrindo os bits mais
+    // significativos da chave exatamente nessa ordem.
+    
+    // No caso do código original do arquivo aes.c, o acesso é feito por linhas, mas o estado do AES é armazenado por
+    // colunas. Por isso, é usada a ordem a seguir.
+    const int ordem[] = { 0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15 };
+    // A ordem natural, caso as S-boxes fossem acessadas por colunas, seria:
+    // const int ordem[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    // Adicione aqui a ordem da implementação em assembly, quando descobrir qual é.
+
 // Loop para descobrir 1 bit por byte
 for (int pos = 0; pos < 16; pos++) {
     sum_zero = 0;               // soma para o caso com MSB[0..pos] = 0
-    sum_msb[pos] = 0;           // soma para o caso com MSB[pos] = 1
+    sum_msb[ordem[pos]] = 0;           // soma para o caso com MSB[pos] = 1
 
     /* ======= 1) ITERS vezes com MSB[0..pos] = 0 (resto aleatório) ======= */
     for (int it = 0; it < ITERS; it++) {
@@ -52,13 +62,16 @@ for (int pos = 0; pos < 16; pos++) {
 
         // força MSB = 0 para todos os bytes de 0 até pos 
         for (int b = 0; b < pos; b++) {
-            input[b] &= 0x7F; // 0111 1111
-            if (MSB[b] == 1) {
-                input[b] |= 0x80; // 1000 0000
-            }
+            // Será montado um ataque não-adaptativo ("em malha aberta").
+            input[ordem[b]] &= 0x7F; // 0111 1111
+
+            // Caso deseje fazer o ataque adaptativo ("em malha fechada"), as linhas abaixo devem ser descomentadas
+            // if (Bit[ordem[b]] == 1) {
+            //     input[ordem[b]] |= 0x80; // 1000 0000
+            // }
         }
 
-        input[pos] &= 0x7F; // força MSB atual (pos) = 0
+        input[ordem[pos]] &= 0x7F; // força MSB atual (pos) = 0
 
         AES_ECB_encrypt(&ctx, input, &conts);
         sum_zero += conts;
@@ -73,11 +86,12 @@ for (int pos = 0; pos < 16; pos++) {
         #if 1
         // Substitue os bits anteriores (0..pos) por 1
         for (int b = 0; b < pos; b++) {
-            input[b] &= 0x7F; // 0111 1111
-            if (MSB[b] == 1) {
-                input[b] |= 0x80; // 1000 0000
-            }
+            // Ver comentários acima sobre ataque adaptativo ou não-adaptativo
+            input[ordem[b]] &= 0x7F; // 0111 1111
 
+            // if (Bit[ordem[b]] == 1) {
+            //     input[ordem[b]] |= 0x80; // 1000 0000
+            // }
         }
 
         #else // Substitue os bits anteriores (0..pos-1) conforme o valor encontrado
@@ -92,30 +106,37 @@ for (int pos = 0; pos < 16; pos++) {
         #endif
 
         // força MSB atual (pos) = 1
-        input[pos] |= 0x80;
+        input[ordem[pos]] |= 0x80;
 
         AES_ECB_encrypt(&ctx, input, &conts);
-        sum_msb[pos] += conts;
+        sum_msb[ordem[pos]] += conts;
     }
 
     /* ======= cálculo das médias e decisão ======= */
-    avg_msb[pos] = (double)sum_msb[pos] / (double)ITERS;
+    avg_msb[ordem[pos]] = (double)sum_msb[ordem[pos]] / (double)ITERS;
     avg_zero = (double)sum_zero / (double)ITERS;
 
-    //printf("\n--- POSIÇÃO %d ---\n", pos);
-    //printf("avg_msb[%d] = %.6f | avg_zero = %.6f\n", pos, avg_msb[pos], avg_zero);
+    // printf("\n--- POSIÇÃO %d ---\n", pos);
+    // printf("avg_msb[%d] = %.6f | avg_zero = %.6f\n", pos, avg_msb[pos], avg_zero);
 
-    if ((avg_msb[pos] - avg_zero) > 0) {
-        Bit[pos] = 0;
-        printf("Bit[%d] = 0 (avg_msb > avg_zero)\n", pos);
+    if ((avg_msb[ordem[pos]] - avg_zero) > 0) {
+        Bit[ordem[pos]] = 0;
+        // printf("Bit[%d] = 0 (avg_msb > avg_zero)\n", pos);
     } else {
-        Bit[pos] = 1;
-        printf("Bit[%d] = 1 (avg_msb <= avg_zero)\n", pos);
+        Bit[ordem[pos]] = 1;
+        // printf("Bit[%d] = 1 (avg_msb <= avg_zero)\n", pos);
+    } 
+
+    // As linhas a seguir precisam ser executadas em caso de um ataque não-adaptativo. Para um ataque adaptativo, elas
+    // devem ser comentadas.
+    if (pos > 0 && Bit[ordem[pos - 1]] == 1) {
+        Bit[ordem[pos]] = 1 - Bit[ordem[pos]];
     }
 
-    printf("Pos = %d - %s\n", pos, (Bit[pos] == MSB[pos]) ? "OK" : "ERRO");
-    printf("sum_msb  = %d\n", (int)sum_msb[pos]);
-    printf("sum_zero = %d\n\n", (int)sum_zero);
+
+    // printf("Pos = %d - %s\n", pos, (Bit[pos] == MSB[pos]) ? "OK" : "ERRO");
+    // printf("sum_msb  = %d\n", (int)sum_msb[pos]);
+    // printf("sum_zero = %d\n\n", (int)sum_zero);
 }
     int correct = 0;
     /* Compara bits_encontrados e MSB extraído */

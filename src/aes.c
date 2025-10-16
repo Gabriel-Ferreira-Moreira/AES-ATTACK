@@ -110,9 +110,11 @@ static void AddRoundKey(uint8_t round, state_t* state, const uint8_t* RoundKey)
   }
 }
 
+typedef enum { MEM_FAST, MEM_SLOW } mem_state_t;
+
 static void SubBytes(state_t* state, int *O) {
     uint8_t i, j;
-    int first = 1; // sinaliza se é o primeiro incremento
+    mem_state_t mem_state = MEM_FAST;  // Estado inicial da memória
 
     for (i = 0; i < 4; ++i) {
         for (j = 0; j < 4; ++j) 
@@ -124,26 +126,21 @@ static void SubBytes(state_t* state, int *O) {
             (*state)[j][i] = after;
 
 #if BR // Oráculo 2: conta sempre que o Byte cruzar a barreira 0x80
-    
-      if (first) {
-          // Inicia na memória rápida MR -> ML
-          if (before >= 0x80) {
-              (*O)++;
-              first = 0;
-          }
-      } else {
-          // Segue a regra da barreira “cruzar 0x80”
-          if ((before < 0x80 && after >= 0x80) || // MR -> ML
-              (before >= 0x80 && after < 0x80)) { // ML -> MR
-              (*O)++;
-          }
-      }
+
+            if (mem_state == MEM_FAST && before >= 0x80) {
+                mem_state = MEM_SLOW;  // Mudou para memória lenta
+                (*O)++;
+            }
+            else if (mem_state == MEM_SLOW && before < 0x80) {
+                mem_state = MEM_FAST;  // Mudou para memória rápida
+                (*O)++;
+            }
 #else // Oráculo 1: conta sempre que o valor antes for >= 0x80
       
-      if (before >= 0x80) (*O)++;
+            if (before >= 0x80) (*O)++;
 #endif
+        }
     }
-}
 }
 
 
